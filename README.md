@@ -1,34 +1,46 @@
-# Autobumper 
+# Autobumper
 
 ## Overview
-![](assets/demo.png)
 
-a tiny app that bumps your discord server written in go.
+A tiny app that bumps your Discord server written in Go.
 
-autobumper uses [discoself](https://github.com/krishnassh/discoself) which interacts with the Discord client API in ways that are outside Discord's official bot platform. Use of selfbots violates Discord's Terms of Service. I am not responsible for any misuse of this project or any consequences that may arise from its use.
+Autobumper uses [discoself](https://github.com/krishnassh/discoself), which interacts with the Discord client API in ways that are outside Discord’s official bot platform. Use of selfbots may violate Discord’s Terms of Service. The author is not responsible for any misuse of this project or any consequences that may arise from its use.
 
-### How it works
+![demo](assets/demo.png)
 
-Once connected, the selfbot sends the Disboard `/bump` slash
-command and then repeats randomly between 2 hours and 2.5 hours to prevent any kind of detection from disboard's side. It matches the command
-by both name **and** Disboard's application ID (`302050872383242240`), so it
-will never accidentally trigger another bot's `bump` command if multiple bots
-in your server register one.
+---
 
-### Getting Arguments 
+## How it works
 
-You will need to enable **Developer Mode** in Discord to copy IDs.
-Go to `Settings -> Advanced -> Developer Mode` and toggle it on. Then:
+Once connected, the client sends the Disboard `/bump` slash command and then repeats it at random intervals between **2 hours and 2.5 hours** to reduce predictable behavior.
 
-- **Guild ID:** Right-click your server icon and select `Copy Server ID`.
-- **Channel ID:** Right-click the channel you want to bump in and select `Copy Channel ID`.
+It matches the command by both:
 
-- **User Token:** See [this guide](https://gist.github.com/KrishnaSSH/b518ec90cd54f33d70a7d4525e9258a2) for how to obtain your user token
+* Command name
+* Disboard application ID: `302050872383242240`
 
-## How to Run
+This ensures it does not accidentally trigger another bot’s `bump` command if multiple bots are present in the server.
 
+---
 
-## Windows
+## Getting required arguments
+
+You must enable **Developer Mode** in Discord to copy IDs.
+
+Go to:
+`Settings -> Advanced -> Developer Mode -> Enable`
+
+Then:
+
+* **Guild ID:** Right-click your server icon → Copy Server ID
+* **Channel ID:** Right-click the channel → Copy Channel ID
+* **User Token:** Refer to your internal documentation or token retrieval guide.
+
+---
+
+## How to run
+
+### Windows
 
 Open Command Prompt or PowerShell and run:
 
@@ -37,24 +49,24 @@ powershell -Command "Invoke-WebRequest https://raw.githubusercontent.com/Krishna
 start.bat
 ```
 
-Or download manually:
+Alternatively, download manually:
 
-1. Open the following URL in your browser:
+1. Open:
    [https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.bat](https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.bat)
-2. Save the file as start.bat
-3. Double click start.bat to run it
+2. Save it as `start.bat`
+3. Double-click to run
 
 ---
 
-## Linux and macOS
+### Linux and macOS
 
-Open a terminal and run:
+Run directly:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.sh | bash
 ```
 
-Or download and run manually:
+Or download and execute manually:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.sh -o start.sh
@@ -62,5 +74,28 @@ chmod +x start.sh
 ./start.sh
 ```
 
----
+### Android (Termux)
 
+You can also run Autobumper on Android using Termux.
+
+1. Install Termux from [F-Droid (recommended)](https://f-droid.org/en/packages/com.termux/).
+
+2. Open Termux and run:
+
+```bash
+pkg update && pkg upgrade -y
+pkg install curl coreutils -y
+```
+3. Run the installer script:
+```bash
+curl -fsSL https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.sh | bash
+```
+Alternatively, download manually:
+```bash
+curl -fsSL https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.sh -o start.sh
+chmod +x start.sh
+./start.sh
+```
+Note: Make sure Termux has network access and is allowed to run background processes for uninterrupted execution.
+o
+> **Note:** the android system kills termux application from running for longer sessions to prevent this make sure termux app has permission to send notifications and press on aquire-wakelock on the notification
