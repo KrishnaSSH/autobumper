@@ -1,6 +1,7 @@
 # Autobumper 
 
 ## Overview
+![](assets/demo.png)
 
 a tiny app that bumps your discord server written in go.
 
