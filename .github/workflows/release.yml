@@ -14,8 +14,27 @@ jobs:
 
     strategy:
       matrix:
-        goos: [windows, linux, darwin]
-        goarch: [amd64]
+        include:
+          - goos: windows
+            goarch: amd64
+          - goos: windows
+            goarch: arm64
+          - goos: windows
+            goarch: 386
+
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: linux
+            goarch: arm
+          - goos: linux
+            goarch: 386
+
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -32,13 +51,13 @@ jobs:
 
           VERSION=${{ github.ref_name }}
 
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=0 \
           go build -o dist/autobumper-${{ matrix.goos }}-${{ matrix.goarch }}-${VERSION}$EXT .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ matrix.goos }}
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/*
 
   release:
@@ -55,7 +74,7 @@ jobs:
       - name: Flatten files
         run: |
           mkdir -p final
-          find dist -type f -exec mv {} final/ \;
+          cp -r dist/* final/
 
       - name: Generate checksums
         run: |

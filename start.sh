@@ -9,7 +9,15 @@ OUT="$DIR/autobumper"
 mkdir -p "$DIR"
 
 OS=$(uname | tr '[:upper:]' '[:lower:]')
-ARCH="amd64"
+ARCH=$(uname -m)
+
+case "$ARCH" in
+  x86_64) ARCH="amd64" ;;
+  aarch64) ARCH="arm64" ;;
+  armv7l) ARCH="arm" ;;
+  i386|i686) ARCH="386" ;;
+  *) echo "unsupported arch: $ARCH"; exit 1 ;;
+esac
 
 case "$OS" in
   darwin)

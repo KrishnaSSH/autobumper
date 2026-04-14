@@ -11,11 +11,19 @@ if not exist %DIR% (
   mkdir %DIR%
 )
 
+echo detecting architecture...
+
+set ARCH=amd64
+if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set ARCH=arm64
+if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" set ARCH=amd64
+if /i "%PROCESSOR_ARCHITECTURE%"=="x86" set ARCH=386
+
+echo architecture: %ARCH%
 echo fetching latest release...
 
 for /f "delims=" %%i in ('powershell -Command ^
  "(Invoke-RestMethod https://api.github.com/repos/%REPO%/releases/latest).assets ^
- | Where-Object { $_.name -like 'autobumper-windows-amd64*.exe' } ^
+ | Where-Object { $_.name -like 'autobumper-windows-%ARCH%-*.exe' } ^
  | Select-Object -ExpandProperty browser_download_url"') do set URL=%%i
 
 if "%URL%"=="" (
@@ -30,7 +38,8 @@ echo downloading binary...
 powershell -Command "Invoke-WebRequest -Uri %URL% -OutFile %TMP%"
 
 for /f "tokens=1,2" %%a in (%SUM%) do (
-  if "%%b"=="autobumper-windows-amd64-v0.0.1.exe" set EXPECTED=%%a
+  echo %%b | findstr /i "autobumper-windows-%ARCH%" >nul
+  if !errorlevel! == 0 set EXPECTED=%%a
 )
 
 if "%EXPECTED%"=="" (
