@@ -31,9 +31,23 @@ func fileExists(name string) bool {
 	return err == nil
 }
 
+func openTTY() (*os.File, error) {
+	if f, err := os.Open("CONIN$"); err == nil {
+		return f, nil
+	}
+	return os.Open("/dev/tty")
+}
+
 func promptInput(label string) string {
-	reader := bufio.NewReader(os.Stdin)
 	fmt.Print(label)
+	tty, err := openTTY()
+	if err != nil {
+		reader := bufio.NewReader(os.Stdin)
+		input, _ := reader.ReadString('\n')
+		return strings.TrimSpace(input)
+	}
+	defer tty.Close()
+	reader := bufio.NewReader(tty)
 	input, _ := reader.ReadString('\n')
 	return strings.TrimSpace(input)
 }
