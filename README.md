@@ -82,22 +82,11 @@ You can also run Autobumper on Android using Termux.
 
 2. Open Termux and run:
 
-```bash
-pkg update && pkg upgrade -y
-pkg install curl coreutils -y
-```
 3. Run the installer script:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.sh | bash
 ```
-
-Alternatively, download manually:
-```bash
-curl -fsSL https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.sh -o start.sh
-chmod +x start.sh
-./start.sh
-```
-keep pressing enter whenever it prompts you to.
+Fill the Token, Guild-id and channel-id when it prompts you
 
 Note: Make sure Termux has network access and is allowed to run background processes for uninterrupted execution.
 
