@@ -1,17 +1,13 @@
 # This workflow builds and releases versioned Go binaries
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
 name: release
-
 on:
   push:
     tags:
       - "v*"
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         include:
@@ -21,7 +17,6 @@ jobs:
             goarch: arm64
           - goos: windows
             goarch: 386
-
           - goos: linux
             goarch: amd64
           - goos: linux
@@ -30,57 +25,42 @@ jobs:
             goarch: arm
           - goos: linux
             goarch: 386
-
           - goos: darwin
             goarch: amd64
           - goos: darwin
             goarch: arm64
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-go@v5
         with:
           go-version: stable
-
       - name: Build
         run: |
           mkdir -p dist
           EXT=""
           if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
-
           VERSION=${{ github.ref_name }}
-
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=0 \
           go build -o dist/autobumper-${{ matrix.goos }}-${{ matrix.goarch }}-${VERSION}$EXT .
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/*
-
   release:
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - uses: actions/download-artifact@v4
         with:
-          path: dist
-
-      - name: Flatten files
-        run: |
-          mkdir -p final
-          cp -r dist/* final/
-
+          path: final
+          merge-multiple: true
       - name: Generate checksums
         run: |
           cd final
           sha256sum * > checksums.txt
-
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:

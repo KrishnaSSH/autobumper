@@ -45,6 +45,10 @@ func createEnvFile() {
 	g := promptInput("GUILD_ID: ")
 	c := promptInput("CHANNEL_ID: ")
 
+	saveEnv(t, g, c)
+}
+
+func saveEnv(t, g, c string) {
 	content := fmt.Sprintf(
 		"TOKEN=%s\nGUILD_ID=%s\nCHANNEL_ID=%s\n",
 		t, g, c,
@@ -55,23 +59,33 @@ func createEnvFile() {
 		os.Exit(1)
 	}
 
-	fmt.Println(".env file created successfully.")
+	fmt.Println(".env updated successfully.")
 }
 
 func loadConfig() {
-	if !fileExists(".env") {
-		createEnvFile()
-	}
-
 	_ = godotenv.Load()
 
 	token = os.Getenv("TOKEN")
 	guildID = os.Getenv("GUILD_ID")
 	channelID = os.Getenv("CHANNEL_ID")
 
-	if token == "" || guildID == "" || channelID == "" {
-		fmt.Println("Invalid .env. Missing TOKEN, GUILD_ID, or CHANNEL_ID")
-		os.Exit(1)
+	missing := token == "" || guildID == "" || channelID == ""
+
+	if !fileExists(".env") || missing {
+		fmt.Println("Enter the following values to create .env file:")
+
+		// reuse existing values if partially present
+		if token == "" {
+			token = promptInput("USER_TOKEN: ")
+		}
+		if guildID == "" {
+			guildID = promptInput("GUILD_ID: ")
+		}
+		if channelID == "" {
+			channelID = promptInput("CHANNEL_ID: ")
+		}
+
+		saveEnv(token, guildID, channelID)
 	}
 }
 
@@ -121,7 +135,6 @@ func onReady(e *types.ReadyEventData) {
 				select {
 				case <-time.After(delay):
 				case <-stopChan:
-					fmt.Println("Interrupted during wait")
 					return
 				}
 			}
