@@ -100,5 +100,13 @@ chmod +x start.sh
 keep pressing enter whenever it prompts you to.
 
 Note: Make sure Termux has network access and is allowed to run background processes for uninterrupted execution.
-o
+
 > **Note:** the android system kills termux application from running for longer sessions to prevent this make sure termux app has permission to send notifications and press on aquire-wakelock on the notification
+
+---
+
+
+## Support / Community
+
+[![Join Discord](https://img.shields.io/badge/discord-join%20server-5865F2?logo=discord&logoColor=white)](https://discord.gg/pC34hC6q3q)
+
