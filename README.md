@@ -32,9 +32,9 @@ Go to:
 
 Then:
 
-* **Guild ID:** Right-click your server icon → Copy Server ID
-* **Channel ID:** Right-click the channel → Copy Channel ID
-* **User Token:** Refer to your internal documentation or token retrieval guide.
+* **Guild ID:** Right-click your server icon -> Copy Server ID
+* **Channel ID:** Right-click the channel -> Copy Channel ID
+* **User Token:** Refer to the token retrieval guide [here](https://gist.github.com/KrishnaSSH/b518ec90cd54f33d70a7d4525e9258a2).
 
 ---
 
@@ -90,12 +90,15 @@ pkg install curl coreutils -y
 ```bash
 curl -fsSL https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.sh | bash
 ```
+
 Alternatively, download manually:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/KrishnaSSH/autobumper/refs/heads/main/start.sh -o start.sh
 chmod +x start.sh
 ./start.sh
 ```
+keep pressing enter whenever it prompts you to.
+
 Note: Make sure Termux has network access and is allowed to run background processes for uninterrupted execution.
 o
 > **Note:** the android system kills termux application from running for longer sessions to prevent this make sure termux app has permission to send notifications and press on aquire-wakelock on the notification
