@@ -3,7 +3,6 @@ setlocal enabledelayedexpansion
 set REPO=KrishnaSSH/autobumper
 set DIR=bin
 set FILE=%DIR%\autobumper.exe
-set TMP=%DIR%\autobumper.tmp.exe
 set SUM=%DIR%\checksums.txt
 set VERFILE=%DIR%\version.txt
 
@@ -27,35 +26,39 @@ if "%CURRENT%"=="%LATEST%" if exist %FILE% (
   exit /b 0
 )
 
-for /f "delims=" %%i in ('powershell -Command "(Invoke-RestMethod https://api.github.com/repos/%REPO%/releases/latest).assets | Where-Object { $_.name -like \"autobumper-windows-%ARCH%-*\" } | Select-Object -ExpandProperty browser_download_url"') do set URL=%%i
-
-if "%URL%"=="" (
-  echo failed to find binary
-  exit /b 1
-)
+set ARCHIVE=autobumper-windows-%ARCH%-%LATEST%.tar.gz
+set TMP_ARCHIVE=%DIR%\%ARCHIVE%
+set URL=https://github.com/%REPO%/releases/download/%LATEST%/%ARCHIVE%
 
 echo downloading files...
-powershell -Command "Invoke-WebRequest https://github.com/%REPO%/releases/latest/download/checksums.txt -OutFile %SUM%"
-powershell -Command "Invoke-WebRequest '%URL%' -OutFile %TMP%"
+powershell -Command "Invoke-WebRequest https://github.com/%REPO%/releases/download/%LATEST%/checksums.txt -OutFile %SUM%"
+powershell -Command "Invoke-WebRequest '%URL%' -OutFile '%TMP_ARCHIVE%'"
 
 for /f "tokens=1,2" %%a in (%SUM%) do (
-  echo %%b | findstr /i "autobumper-windows-%ARCH%" >nul
+  echo %%b | findstr /i "%ARCHIVE%" >nul
   if !errorlevel! == 0 set EXPECTED=%%a
 )
 
-for /f %%h in ('powershell -Command "Get-FileHash %TMP% -Algorithm SHA256 | Select-Object -ExpandProperty Hash"') do set ACTUAL=%%h
+for /f %%h in ('powershell -Command "Get-FileHash '%TMP_ARCHIVE%' -Algorithm SHA256 | Select-Object -ExpandProperty Hash"') do set ACTUAL=%%h
 
 echo expected: %EXPECTED%
 echo actual: %ACTUAL%
 
 if /i not "%EXPECTED%"=="%ACTUAL%" (
   echo checksum failed
-  del %TMP%
+  del "%TMP_ARCHIVE%"
   exit /b 1
 )
 
-move /Y %TMP% %FILE%
+powershell -Command "tar -xzf '%TMP_ARCHIVE%' -C '%DIR%'"
+del "%TMP_ARCHIVE%"
+
+for /f "delims=" %%f in ('powershell -Command "Get-ChildItem %DIR%\autobumper-windows-%ARCH%*.exe | Select-Object -ExpandProperty Name"') do (
+  move /Y "%DIR%\%%f" "%FILE%" >nul
+)
+
 echo %LATEST% > %VERFILE%
 echo running...
 %FILE%
 endlocal
+

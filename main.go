@@ -26,11 +26,6 @@ var (
 	stopChan  = make(chan struct{})
 )
 
-func fileExists(name string) bool {
-	_, err := os.Stat(name)
-	return err == nil
-}
-
 func openTTY() (*os.File, error) {
 	if f, err := os.Open("CONIN$"); err == nil {
 		return f, nil
@@ -52,114 +47,109 @@ func promptInput(label string) string {
 	return strings.TrimSpace(input)
 }
 
-func createEnvFile() {
-	fmt.Println(".env not found. Please enter required values:")
-
-	t := promptInput("USER_TOKEN: ")
-	g := promptInput("GUILD_ID: ")
-	c := promptInput("CHANNEL_ID: ")
-
-	saveEnv(t, g, c)
+func promptCreds() {
+	token = promptInput("user token: ")
+	guildID = promptInput("guild id: ")
+	channelID = promptInput("channel id: ")
+	saveEnv(token, guildID, channelID)
 }
 
 func saveEnv(t, g, c string) {
-	content := fmt.Sprintf(
-		"TOKEN=%s\nGUILD_ID=%s\nCHANNEL_ID=%s\n",
-		t, g, c,
-	)
-
+	content := fmt.Sprintf("TOKEN=%s\nGUILD_ID=%s\nCHANNEL_ID=%s\n", t, g, c)
 	if err := os.WriteFile(".env", []byte(content), 0644); err != nil {
-		fmt.Println("Failed to write .env:", err)
+		fmt.Println("failed to write .env:", err)
 		os.Exit(1)
 	}
-
-	fmt.Println(".env updated successfully.")
 }
 
-func loadConfig() {
+func loadEnv() bool {
 	_ = godotenv.Load()
-
 	token = os.Getenv("TOKEN")
 	guildID = os.Getenv("GUILD_ID")
 	channelID = os.Getenv("CHANNEL_ID")
+	return token != "" && guildID != "" && channelID != ""
+}
 
-	missing := token == "" || guildID == "" || channelID == ""
+func tryConnect() bool {
+	if client != nil {
+		client.Close()
+	}
+	client = discoself.NewClient(token, &types.DefaultConfig)
 
-	if !fileExists(".env") || missing {
-		fmt.Println("Enter the following values to create .env file:")
+	connected := make(chan bool, 1)
+	client.AddHandler(types.GatewayEventReady, func(e *types.ReadyEventData) {
+		fmt.Printf("logged in as: %s\n", e.User.Username)
+		connected <- true
+		go runBumpLoop()
+	})
 
-		// reuse existing values if partially present
-		if token == "" {
-			token = promptInput("USER_TOKEN: ")
-		}
-		if guildID == "" {
-			guildID = promptInput("GUILD_ID: ")
-		}
-		if channelID == "" {
-			channelID = promptInput("CHANNEL_ID: ")
-		}
+	if err := client.Connect(); err != nil {
+		fmt.Println("connection error:", err)
+		connected <- false
+	}
 
-		saveEnv(token, guildID, channelID)
+	select {
+	case ok := <-connected:
+		return ok
+	case <-time.After(10 * time.Second):
+		fmt.Println("connection timed out.")
+		return false
 	}
 }
 
 func main() {
-	loadConfig()
-
-	client = discoself.NewClient(token, &types.DefaultConfig)
-	client.AddHandler(types.GatewayEventReady, onReady)
-
-	if err := client.Connect(); err != nil {
-		fmt.Println("Error connecting:", err)
-		return
+	if !loadEnv() {
+		fmt.Println("no credentials found. please enter your details:")
+		promptCreds()
 	}
 
-	fmt.Println("Running. press ctrl-c to exit.")
+	for {
+		if tryConnect() {
+			break
+		}
+		fmt.Println("credentials incorrect. please re-enter:")
+		promptCreds()
+		loadEnv()
+	}
 
+	fmt.Println("running. press ctrl-c to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
-	fmt.Println("\nShutting down...")
+	fmt.Println("shutting down...")
 	close(stopChan)
-
 	client.Close()
 }
 
-func onReady(e *types.ReadyEventData) {
-	fmt.Printf("Logged in as: %s\n", e.User.Username)
+func runBumpLoop() {
+	for {
+		select {
+		case <-stopChan:
+			fmt.Println("stopping bump loop...")
+			return
+		default:
+			sendBump()
 
-	go func() {
-		for {
+			min := 2 * time.Hour
+			maxExtra := 30 * time.Minute
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			delay := min + time.Duration(r.Int63n(int64(maxExtra)))
+			fmt.Printf("next bump in: %s\n", formatDuration(delay))
+
 			select {
+			case <-time.After(delay):
 			case <-stopChan:
-				fmt.Println("Stopping bump loop...")
 				return
-			default:
-				sendBump()
-
-				min := 2 * time.Hour
-				maxExtra := 30 * time.Minute
-
-				r := rand.New(rand.NewSource(time.Now().UnixNano()))
-				delay := min + time.Duration(r.Int63n(int64(maxExtra)))
-
-				fmt.Printf("Next bump in: %s\n", formatDuration(delay))
-
-				select {
-				case <-time.After(delay):
-				case <-stopChan:
-					return
-				}
 			}
 		}
-	}()
+	}
 }
 
 func sendBump() {
 	cmds, err := discord.GetSlashCommands(client.Gateway, guildID)
 	if err != nil {
-		fmt.Println("Error fetching slash commands:", err)
+		fmt.Printf("[%s] no internet connection, will retry next bump\n", time.Now().Format("2006-01-02 15:04:05"))
 		return
 	}
 
@@ -174,17 +164,14 @@ func sendBump() {
 		}
 	}
 
-	fmt.Println("Disboard bump command not found. Is Disboard in this server?")
+	fmt.Println("disboard bump command not found. is disboard in this server?")
 }
 
 func formatDuration(d time.Duration) string {
 	h := d / time.Hour
 	d -= h * time.Hour
-
 	m := d / time.Minute
 	d -= m * time.Minute
-
 	s := d / time.Second
-
-	return fmt.Sprintf("%d hours %d minutes %d seconds", h, m, s)
+	return fmt.Sprintf("%dh %dm %ds", h, m, s)
 }

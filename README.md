@@ -92,6 +92,8 @@ Note: Make sure Termux has network access and is allowed to run background proce
 
 > **Note:** the android system kills termux application from running for longer sessions to prevent this make sure termux app has permission to send notifications and press on aquire-wakelock on the notification
 
+<img src="assets/acquire_wakelock.png" width="200">
+
 ---
 
 
